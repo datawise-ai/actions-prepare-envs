@@ -1,0 +1,148 @@
+name: "datawise Action Prepare Build and running envs"
+description: "datawise Action Prepare Build and running envs"
+inputs:
+  CHECKOUT:
+    default: true 
+    required: false
+  PROJECT:
+    required: false
+  APP:
+    required: false
+  SERVICE:
+    required: false
+  INSTANCE:
+    required: false
+  VERSION:
+    required: false
+  RUN_BEFORE_STEPS:
+    required: false
+    default: "echo \"nothing to run\""
+  RUN_AFTER_STEPS:
+    required: false
+    default: "echo \"nothing to run\""    
+  SET_BUILDENVS:
+    required: false
+    default: true
+  SET_ENVS:
+    required: false
+    default: true
+
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: run before all steps
+      id: run-after-steps
+      shell: bash
+      run: |
+        ${{ inputs.RUN_BEFORE_STEPS }}  || true
+
+    - name: Checkout repo
+      if: ${{ inputs.CHECKOUT == 'true' }}
+      uses: actions/checkout@v4
+
+    - name: Set PROJECT
+      shell: bash
+      run: |
+        if [ "X${{ inputs.PROJECT }}" != "X" ]; then
+          echo "PROJECT=${{ inputs.PROJECT }}" >> $GITHUB_ENV
+        fi
+
+    - name: Set APP
+      shell: bash
+      run: |
+        if [ "X${{ inputs.APP }}" != "X" ]; then
+          echo "APP=${{ inputs.APP }}" >> $GITHUB_ENV
+        fi
+
+    - name: Set SERVICE
+      shell: bash
+      run: |
+        if [ "X${{ inputs.SERVICE }}" != "X" ]; then
+          echo "SERVICE=${{ inputs.SERVICE }}" >> $GITHUB_ENV
+        fi
+
+    - name: Set INSTANCE
+      shell: bash
+      run: |
+        if [ "X${{ inputs.INSTANCE }}" != "X" ]; then
+          echo "INSTANCE=${{ inputs.INSTANCE }}" >> $GITHUB_ENV
+        else
+          echo INSTANCE=${{ github.ref_name }} >> $GITHUB_ENV
+        fi
+
+    - name: Set VERSION
+      shell: bash
+      run: |
+        if [ "X${{ inputs.VERSION }}" != "X" ]; then
+          echo "VERSION=${{ inputs.VERSION }}" >> $GITHUB_ENV
+        else
+          echo VERSION=${GITHUB_SHA::7} >> $GITHUB_ENV
+        fi
+
+    - name: Set SHORTSHA and BRANCH_NAME
+      shell: bash
+      run: |
+        echo SHORTSHA=${GITHUB_SHA::7} >> $GITHUB_ENV
+        echo BRANCH_NAME=${{ github.ref_name }} | tr '/' '_' >> $GITHUB_ENV
+
+
+    - name: read default Build envs
+      if: ${{ inputs.SET_BUILDENVS == 'true' }}
+      shell: bash
+      run: |
+        echo "Looking for .github/buildenvs/default..."
+        [ -f ".github/buildenvs/default" ] &&  echo ":rocket: loaded ".github/buildenvs/default" :rocket:"  >>  $GITHUB_STEP_SUMMARY
+        (([ -f ".github/buildenvs/default" ] && cat ".github/buildenvs/default" | tee) || true) >> $GITHUB_ENV
+
+
+    - name: read branch Build envs
+      if: ${{ inputs.SET_BUILDENVS == 'true' }}
+      shell: bash
+      run: |
+        echo "Looking for .github/buildenvs/${{github.ref_name}}..."
+        [ -f ".github/buildenvs/${{github.ref_name}}" ] &&  echo ":rocket: loaded ".github/buildenvs/${{github.ref_name}}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
+        (([ -f ".github/buildenvs/${{github.ref_name}}" ] && cat ".github/buildenvs/${{github.ref_name}}" | tee) || true) >> $GITHUB_ENV
+
+
+    - name: read default env
+      if: ${{ inputs.SET_ENVS == 'true' }}
+      shell: bash
+      run: |
+        echo "Looking for .github/envs/default..."
+        [ -f ".github/envs/default" ] &&  echo ":rocket: loaded .github/envs/default :rocket:"  >>  $GITHUB_STEP_SUMMARY
+        (([ -f ".github/envs/default" ] && cat ".github/envs/default" | tee) || true) >> $GITHUB_ENV
+
+
+    - name: read branch env
+      if: ${{ inputs.SET_ENVS == 'true' }}
+      shell: bash
+      run: |
+        echo "Looking for .github/envs/${{github.ref_name}}..."
+        [ -f ".github/envs/${{github.ref_name}}" ] &&  echo ":rocket: loaded ".github/envs/${{github.ref_name}}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
+        (([ -f ".github/envs/${{github.ref_name}}" ] && cat ".github/envs/${{github.ref_name}}" | tee) || true) >> $GITHUB_ENV
+
+    - name: send info to summary
+      id: echo2summary
+      shell: bash
+      run: |
+          echo ''  >> $GITHUB_STEP_SUMMARY
+          echo ":rocket: running vars :rocket:"  >>  $GITHUB_STEP_SUMMARY
+          echo ''  >> $GITHUB_STEP_SUMMARY
+          echo '| Variable | Value |'                        >> $GITHUB_STEP_SUMMARY
+          echo '| :---: | :---: | '                          >> $GITHUB_STEP_SUMMARY
+          echo '| ref | ${{ github.ref }} | '                >> $GITHUB_STEP_SUMMARY
+          echo '| PROJECT | ${{ env.PROJECT }} | '           >> $GITHUB_STEP_SUMMARY
+          echo '| APP | ${{ env.APP }} | '   >> $GITHUB_STEP_SUMMARY
+          echo '| SERVICE | ${{ env.SERVICE }} | '   >> $GITHUB_STEP_SUMMARY
+          echo '| INSTANCE | ${{ env.INSTANCE }} | '   >> $GITHUB_STEP_SUMMARY
+          echo '| VERSION | ${{ env.VERSION }} | '   >> $GITHUB_STEP_SUMMARY
+          echo '| SHORTSHA | ${{ env.SHORTSHA }} | '   >> $GITHUB_STEP_SUMMARY
+          echo '| BRANCH_NAME | ${{ env.BRANCH_NAME }} | '   >> $GITHUB_STEP_SUMMARY          
+
+    - name: run after all steps
+      id: run-after-steps
+      shell: bash
+      run: |
+        ${{ inputs.RUN_AFTER_STEPS }}  || true
