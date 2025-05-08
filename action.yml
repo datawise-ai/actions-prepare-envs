@@ -33,7 +33,7 @@ runs:
   steps:
 
     - name: run before all steps
-      id: run-after-steps
+      id: run-before-steps
       shell: bash
       run: |
         ${{ inputs.RUN_BEFORE_STEPS }}  || true
