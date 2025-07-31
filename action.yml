@@ -36,7 +36,14 @@ runs:
       id: run-before-steps
       shell: bash
       run: |
-        ${{ inputs.RUN_BEFORE_STEPS }}  || true
+          bash -c "${{ inputs.RUN_BEFORE_STEPS }}" || true
+
+    - name: Get Time
+      id: time
+      uses: nanzm/get-time-action@v1.1
+      with:
+        timeZone: 0
+        format: 'YYYY-MM-DD_HH:mm:ss'
 
     - name: Checkout repo
       if: ${{ inputs.CHECKOUT == 'true' }}
@@ -78,15 +85,14 @@ runs:
         if [ "X${{ inputs.VERSION }}" != "X" ]; then
           echo "VERSION=${{ inputs.VERSION }}" >> $GITHUB_ENV
         else
-          echo VERSION=${GITHUB_SHA::7} >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
         fi
 
     - name: Set SHORTSHA and BRANCH_NAME
       shell: bash
       run: |
         echo SHORTSHA=${GITHUB_SHA::7} >> $GITHUB_ENV
-        echo BRANCH_NAME=${{ github.ref_name }} | tr '/' '_' >> $GITHUB_ENV
-
+        echo "BRANCH_NAME=$(echo '${{ github.ref_name }}' | tr '/' '_')" >> $GITHUB_ENV
 
     - name: read default Build envs
       if: ${{ inputs.SET_BUILDENVS == 'true' }}
@@ -146,3 +152,4 @@ runs:
       shell: bash
       run: |
         ${{ inputs.RUN_AFTER_STEPS }}  || true
+
