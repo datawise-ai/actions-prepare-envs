@@ -70,14 +70,16 @@ runs:
           echo "SERVICE=${{ inputs.SERVICE }}" >> $GITHUB_ENV
         fi
 
-    - name: Set INSTANCE
+    - name: Set INSTANCE 
       shell: bash
       run: |
         if [ "X${{ inputs.INSTANCE }}" != "X" ]; then
           echo "INSTANCE=${{ inputs.INSTANCE }}" >> $GITHUB_ENV
         else
-          echo INSTANCE=${{ github.ref_name }} >> $GITHUB_ENV
-        fi
+          INSTANCE_NAME=$(basename "${{ github.ref_name }}")
+          INSTANCE_NAME=$(echo "$INSTANCE_NAME" | tr '/.-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
+          echo "INSTANCE=$INSTANCE_NAME" >> $GITHUB_ENV
+        fi       
 
     - name: Set VERSION
       shell: bash
@@ -92,8 +94,10 @@ runs:
       shell: bash
       run: |
         echo SHORTSHA=${GITHUB_SHA::7} >> $GITHUB_ENV
-        echo "BRANCH_NAME=$(echo '${{ github.ref_name }}' | tr '/' '_')" >> $GITHUB_ENV
-
+        echo "BRANCH_NAME=$(echo '${{ github.ref_name }}' \
+          | tr '/.-' '_' \
+          | sed 's/[^A-Za-z0-9_]/_/g')" >> $GITHUB_ENV
+        
     - name: read default Build envs
       if: ${{ inputs.SET_BUILDENVS == 'true' }}
       shell: bash
@@ -107,9 +111,9 @@ runs:
       if: ${{ inputs.SET_BUILDENVS == 'true' }}
       shell: bash
       run: |
-        echo "Looking for .github/buildenvs/${{github.ref_name}}..."
-        [ -f ".github/buildenvs/${{github.ref_name}}" ] &&  echo ":rocket: loaded ".github/buildenvs/${{github.ref_name}}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
-        (([ -f ".github/buildenvs/${{github.ref_name}}" ] && cat ".github/buildenvs/${{github.ref_name}}" | tee) || true) >> $GITHUB_ENV
+        echo "Looking for .github/buildenvs/${{ env.INSTANCE }}..."
+        [ -f ".github/buildenvs/${{ env.INSTANCE }}" ] &&  echo ":rocket: loaded ".github/buildenvs/${{ env.INSTANCE }}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
+        (([ -f ".github/buildenvs/${{ env.INSTANCE }}" ] && cat ".github/buildenvs/${{ env.INSTANCE }}" | tee) || true) >> $GITHUB_ENV
 
 
     - name: read default env
@@ -125,9 +129,9 @@ runs:
       if: ${{ inputs.SET_ENVS == 'true' }}
       shell: bash
       run: |
-        echo "Looking for .github/envs/${{github.ref_name}}..."
-        [ -f ".github/envs/${{github.ref_name}}" ] &&  echo ":rocket: loaded ".github/envs/${{github.ref_name}}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
-        (([ -f ".github/envs/${{github.ref_name}}" ] && cat ".github/envs/${{github.ref_name}}" | tee) || true) >> $GITHUB_ENV
+        echo "Looking for .github/envs/${{ env.INSTANCE }}..."
+        [ -f ".github/envs/${{ env.INSTANCE }}" ] &&  echo ":rocket: loaded ".github/envs/${{ env.INSTANCE }}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
+        (([ -f ".github/envs/${{ env.INSTANCE }}" ] && cat ".github/envs/${{ env.INSTANCE }}" | tee) || true) >> $GITHUB_ENV
 
     - name: send info to summary
       id: echo2summary
