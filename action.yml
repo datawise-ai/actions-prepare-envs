@@ -74,9 +74,15 @@ runs:
       shell: bash
       run: |
         if [ "X${{ inputs.INSTANCE }}" != "X" ]; then
-          echo "INSTANCE=${{ inputs.INSTANCE }}" >> $GITHUB_ENV
+          echo "INSTANCE=${{ inputs.INSTANCE}}" >> $GITHUB_ENV
         else
-          INSTANCE_NAME=$(basename "${{ github.ref_name }}")
+          if [[ "${GITHUB_REF}" == refs/tags/release/*/* ]]; then
+            # Extract instance name between release/ and version
+            INSTANCE_NAME=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f1)
+          else
+            INSTANCE_NAME=$(basename "${{ github.ref_name }}")
+          fi
+          # Normalize
           INSTANCE_NAME=$(echo "$INSTANCE_NAME" | tr '/.-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
           echo "INSTANCE=$INSTANCE_NAME" >> $GITHUB_ENV
         fi       
@@ -87,7 +93,15 @@ runs:
         if [ "X${{ inputs.VERSION }}" != "X" ]; then
           echo "VERSION=${{ inputs.VERSION }}" >> $GITHUB_ENV
         else
-          echo "VERSION=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
+          if [[ "${GITHUB_REF}" == refs/tags/release/*/* ]]; then
+            # Extract version (after instance name)
+            VERSION_NUM=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f2-)
+          else
+            VERSION_NUM="${GITHUB_SHA:0:7}"
+          fi
+          # Normalize
+          VERSION_NUM=$(echo "$VERSION_NUM" | tr '/.-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
+          echo "VERSION=$VERSION_NUM" >> $GITHUB_ENV
         fi
 
     - name: Set SHORTSHA and BRANCH_NAME
