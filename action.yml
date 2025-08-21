@@ -77,32 +77,34 @@ runs:
           echo "INSTANCE=${{ inputs.INSTANCE}}" >> $GITHUB_ENV
         else
           if [[ "${GITHUB_REF}" == refs/tags/release/*/* ]]; then
-            # Extract instance name between release/ and version
+            # Tag format: release/<instance>/<version>
             INSTANCE_NAME=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f1)
           else
+            # Branches: take basename of ref_name (e.g. devops/foo/bar -> bar)
             INSTANCE_NAME=$(basename "${{ github.ref_name }}")
           fi
-          # Normalize
-          INSTANCE_NAME=$(echo "$INSTANCE_NAME" | tr '/.-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
+          INSTANCE_NAME=$(echo "$INSTANCE_NAME" | tr '/-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
           echo "INSTANCE=$INSTANCE_NAME" >> $GITHUB_ENV
-        fi       
+        fi
 
     - name: Set VERSION
       shell: bash
       run: |
         if [ "X${{ inputs.VERSION }}" != "X" ]; then
-          echo "VERSION=${{ inputs.VERSION }}" >> $GITHUB_ENV
+          RAW_VERSION="${{ inputs.VERSION }}"
         else
           if [[ "${GITHUB_REF}" == refs/tags/release/*/* ]]; then
-            # Extract version (after instance name)
-            VERSION_NUM=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f2-)
+            RAW_VERSION=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f2-)
           else
-            VERSION_NUM="${GITHUB_SHA:0:7}"
+            RAW_VERSION="${GITHUB_SHA:0:7}"
           fi
-          # Normalize
-          VERSION_NUM=$(echo "$VERSION_NUM" | tr '/.-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
-          echo "VERSION=$VERSION_NUM" >> $GITHUB_ENV
         fi
+
+        # Keep both raw and normalized
+        echo "RAW_VERSION=$RAW_VERSION" >> $GITHUB_ENV
+        VERSION_NUM=$(echo "$RAW_VERSION" | tr '/-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
+        echo "VERSION=$VERSION_NUM" >> $GITHUB_ENV
+
 
     - name: Set SHORTSHA and BRANCH_NAME
       shell: bash
