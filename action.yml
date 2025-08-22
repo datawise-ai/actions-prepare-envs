@@ -102,7 +102,7 @@ runs:
 
         # Keep both raw and normalized
         echo "RAW_VERSION=$RAW_VERSION" >> $GITHUB_ENV
-        VERSION_NUM=$(echo "$RAW_VERSION" | tr '/-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
+        VERSION_NUM=$(echo "$RAW_VERSION" | tr '/-' '_' | sed 's/[^A-Za-z0-9._]/_/g')
         echo "VERSION=$VERSION_NUM" >> $GITHUB_ENV
 
 
