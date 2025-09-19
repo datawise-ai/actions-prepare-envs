@@ -76,15 +76,20 @@ runs:
         if [ "X${{ inputs.INSTANCE }}" != "X" ]; then
           echo "INSTANCE=${{ inputs.INSTANCE}}" >> $GITHUB_ENV
         else
-          if [[ "${GITHUB_REF}" == refs/tags/release/*/* ]]; then
-            # Tag format: release/<instance>/<version>
-            INSTANCE_NAME=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f1)
+          if [[ "${GITHUB_REF_NAME}" == release/*/* ]]; then
+            # Tag format: release/<instance>/<version> , keep only the <instance> as INSTANCE_NAME
+            echo "Found release/*/* pattern, keeping only the last part"
+            INSTANCE_NAME=$(echo "${GITHUB_REF_NAME#release/}" | cut -d'/' -f1)
+          elif [[ "${GITHUB_REF_NAME}" == deploy/* ]]; then
+            # Tag format: deploy/......, strip the deploy part
+            echo "Found deploy/* pattern, stripping deploy"
+            INSTANCE_NAME="${GITHUB_REF_NAME#deploy/}"
           else
             # Branches: take basename of ref_name (e.g. devops/foo/bar -> bar)
-            #INSTANCE_NAME=$(basename "${{ github.ref_name }}")  ### WHY THIS @STEFANOS ?
             INSTANCE_NAME="${{ github.ref_name }}"  
           fi
-          INSTANCE_NAME=$(echo "$INSTANCE_NAME" | tr '/-' '_' | sed 's/[^A-Za-z0-9_]/_/g')
+          #Since we use the INSTANCE_NAME in the helm release name, and the release name does not support _, we cleanup
+          INSTANCE_NAME=$(echo "$INSTANCE_NAME" | sed 's/[^A-Za-z0-9_]//g')
           echo "INSTANCE=$INSTANCE_NAME" >> $GITHUB_ENV
         fi
 
@@ -94,8 +99,8 @@ runs:
         if [ "X${{ inputs.VERSION }}" != "X" ]; then
           RAW_VERSION="${{ inputs.VERSION }}"
         else
-          if [[ "${GITHUB_REF}" == refs/tags/release/*/* ]]; then
-            RAW_VERSION=$(echo "${GITHUB_REF#refs/tags/release/}" | cut -d'/' -f2-)
+          if [[ "${GITHUB_REF_NAME}" == release/*/* ]]; then
+            RAW_VERSION=$(echo "${GITHUB_REF_NAME#release/}" | cut -d'/' -f2-)
           else
             RAW_VERSION="${GITHUB_SHA:0:7}"
           fi
