@@ -26,6 +26,9 @@ inputs:
   SET_ENVS:
     required: false
     default: true
+  TIMESTAMP_TZ:
+    required: false
+    default: 'UTC'
 
 
 runs:
@@ -148,6 +151,12 @@ runs:
         [ -f ".github/envs/${{ env.INSTANCE }}" ] &&  echo ":rocket: loaded ".github/envs/${{ env.INSTANCE }}" :rocket:"  >>  $GITHUB_STEP_SUMMARY
         (([ -f ".github/envs/${{ env.INSTANCE }}" ] && cat ".github/envs/${{ env.INSTANCE }}" | tee) || true) >> $GITHUB_ENV
 
+    - name: set timestamp
+      if: ${{ inputs.SET_ENVS == 'true' }}
+      shell: bash
+      run: |
+        echo TIMESTAMP=$(TZ=${{ inputs.TIMESTAMP_TZ }} date --utc +'%Y-%m-%d_%H:%M:%S') >> $GITHUB_ENV
+
     - name: send info to summary
       id: echo2summary
       shell: bash
@@ -165,6 +174,7 @@ runs:
           echo '| VERSION | ${{ env.VERSION }} | '   >> $GITHUB_STEP_SUMMARY
           echo '| SHORTSHA | ${{ env.SHORTSHA }} | '   >> $GITHUB_STEP_SUMMARY
           echo '| BRANCH_NAME | ${{ env.BRANCH_NAME }} | '   >> $GITHUB_STEP_SUMMARY          
+          echo '| TIMESTAMP | ${{ env.TIMESTAMP }} | '   >> $GITHUB_STEP_SUMMARY
 
     - name: run after all steps
       id: run-after-steps
