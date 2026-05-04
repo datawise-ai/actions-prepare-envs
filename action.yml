@@ -79,7 +79,8 @@ runs:
           elif [[ "${GITHUB_REF_NAME}" == deploy/* ]]; then
             # Tag format: deploy/......, strip the deploy part
             echo "Found deploy/* pattern, stripping deploy"
-            INSTANCE_NAME="${GITHUB_REF_NAME#deploy/}"
+            ##INSTANCE_NAME="${GITHUB_REF_NAME#deploy/}"
+            INSTANCE_NAME=$(echo "$GITHUB_REF_NAME" | cut -d'/' -f2)
           else
             # Branches: take basename of ref_name (e.g. devops/foo/bar -> bar)
             INSTANCE_NAME="${{ github.ref_name }}"  
@@ -97,6 +98,12 @@ runs:
         else
           if [[ "${GITHUB_REF_NAME}" == release/*/* ]]; then
             RAW_VERSION=$(echo "${GITHUB_REF_NAME#release/}" | cut -d'/' -f2-)
+          elif [[ "${GITHUB_REF_NAME}" == deploy/* ]]; then
+            #if three parts, take third as version. else use hash
+            RAW_VERSION=$(echo "${GITHUB_REF_NAME}" | cut -d'/' -f3)
+            if [[ "X$RAW_VERSION" == "X" ]]; then
+              RAW_VERSION="${GITHUB_SHA:0:7}"  
+            fi
           else
             RAW_VERSION="${GITHUB_SHA:0:7}"
           fi
