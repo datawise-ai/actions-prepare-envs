@@ -26,6 +26,8 @@ inputs:
   SET_ENVS:
     required: false
     default: true
+  TIMEOUT:
+    required: false
   TIMESTAMP_TZ:
     required: false
     default: 'UTC'
@@ -64,6 +66,13 @@ runs:
       run: |
         if [ "X${{ inputs.SERVICE }}" != "X" ]; then
           echo "SERVICE=${{ inputs.SERVICE }}" >> $GITHUB_ENV
+        fi
+
+    - name: Set TIMEOUT
+      shell: bash
+      run: |
+        if [ "X${{ inputs.TIMEOUT }}" != "X" ]; then
+          echo "TIMEOUT=${{ inputs.TIMEOUT }}" >> $GITHUB_ENV
         fi
 
     - name: Set INSTANCE 
@@ -179,6 +188,7 @@ runs:
           echo '| SERVICE | ${{ env.SERVICE }} | '   >> $GITHUB_STEP_SUMMARY
           echo '| INSTANCE | ${{ env.INSTANCE }} | '   >> $GITHUB_STEP_SUMMARY
           echo '| VERSION | ${{ env.VERSION }} | '   >> $GITHUB_STEP_SUMMARY
+          echo '| TIMEOUT | ${{ env.TIMEOUT }} | '   >> $GITHUB_STEP_SUMMARY
           echo '| SHORTSHA | ${{ env.SHORTSHA }} | '   >> $GITHUB_STEP_SUMMARY
           echo '| BRANCH_NAME | ${{ env.BRANCH_NAME }} | '   >> $GITHUB_STEP_SUMMARY          
           echo '| TIMESTAMP | ${{ env.TIMESTAMP }} | '   >> $GITHUB_STEP_SUMMARY
